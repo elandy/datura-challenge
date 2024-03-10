@@ -21,11 +21,10 @@ import time
 import typing
 import bittensor as bt
 
-# Bittensor Miner Template:
-import template
-
 # import base miner class which takes care of most of the boilerplate
 from template.base.miner import BaseMinerNeuron
+from neurons.parsing import parse
+from neurons import protocol
 
 
 class Miner(BaseMinerNeuron):
@@ -43,27 +42,23 @@ class Miner(BaseMinerNeuron):
         # TODO(developer): Anything specific to your use case you can do here
 
     async def forward(
-        self, synapse: template.protocol.Dummy
-    ) -> template.protocol.Dummy:
+        self, synapse: protocol.WebServerLogLine
+    ) -> protocol.WebServerLogLine:
         """
-        Processes the incoming 'Dummy' synapse by performing a predefined operation on the input data.
-        This method should be replaced with actual logic relevant to the miner's purpose.
+        Processes the incoming 'WebServerLogLine' synapse by performing a parsing on the input logline.
 
         Args:
-            synapse (template.protocol.Dummy): The synapse object containing the 'dummy_input' data.
+            synapse (protocol.WebServerLogLine): The synapse object containing the 'logline_input' data.
 
         Returns:
-            template.protocol.Dummy: The synapse object with the 'dummy_output' field set to twice the 'dummy_input' value.
-
-        The 'forward' function is a placeholder and should be overridden with logic that is appropriate for
-        the miner's intended operation. This method demonstrates a basic transformation of input data.
+            protocol.WebServerLogLine: The synapse object with the 'parsed_logline' field
+            that contains a dictionary with the parsed data from the logline input.
         """
-        # TODO(developer): Replace with actual implementation logic.
-        synapse.dummy_output = synapse.dummy_input * 2
+        synapse.parsed_logline = parse(synapse.logline_input)
         return synapse
 
     async def blacklist(
-        self, synapse: template.protocol.Dummy
+        self, synapse: protocol.WebServerLogLine
     ) -> typing.Tuple[bool, str]:
         """
         Determines whether an incoming request should be blacklisted and thus ignored. Your implementation should
@@ -74,7 +69,7 @@ class Miner(BaseMinerNeuron):
         requests before they are deserialized to avoid wasting resources on requests that will be ignored.
 
         Args:
-            synapse (template.protocol.Dummy): A synapse object constructed from the headers of the incoming request.
+            synapse (protocol.WebServerLogLine): A synapse object constructed from the headers of the incoming request.
 
         Returns:
             Tuple[bool, str]: A tuple containing a boolean indicating whether the synapse's hotkey is blacklisted,
@@ -119,7 +114,7 @@ class Miner(BaseMinerNeuron):
         )
         return False, "Hotkey recognized!"
 
-    async def priority(self, synapse: template.protocol.Dummy) -> float:
+    async def priority(self, synapse: protocol.WebServerLogLine) -> float:
         """
         The priority function determines the order in which requests are handled. More valuable or higher-priority
         requests are processed before others. You should design your own priority mechanism with care.
@@ -127,7 +122,7 @@ class Miner(BaseMinerNeuron):
         This implementation assigns priority to incoming requests based on the calling entity's stake in the metagraph.
 
         Args:
-            synapse (template.protocol.Dummy): The synapse object that contains metadata about the incoming request.
+            synapse (protocol.WebServerLogLine): The synapse object that contains metadata about the incoming request.
 
         Returns:
             float: A priority score derived from the stake of the calling entity.
@@ -139,17 +134,35 @@ class Miner(BaseMinerNeuron):
         Example priority logic:
         - A higher stake results in a higher priority value.
         """
-        # TODO(developer): Define how miners should prioritize requests.
+        #  the miner should prioritize longer requests because they are more likely to be useful to
+        #  fill all the keys of the ParsedWebserverLogLine, which gives higher scores
         caller_uid = self.metagraph.hotkeys.index(
             synapse.dendrite.hotkey
         )  # Get the caller index.
-        prirority = float(
+
+        # The average size of our WebServer Loglines is 80. Anything shorter will probably have fewer data to fill
+        # so we assign them a lower priority
+        length_difference = 80 - len(synapse.logline_input)
+        if length_difference > 0:
+            factor = length_difference / 80
+        else:
+            factor = 1.0
+        priority = float(
             self.metagraph.S[caller_uid]
-        )  # Return the stake as the priority.
+        ) * factor  # Return the stake multiplied by the length factor as the priority.
         bt.logging.trace(
-            f"Prioritizing {synapse.dendrite.hotkey} with value: ", prirority
+            f"Prioritizing {synapse.dendrite.hotkey} with value: ", priority
         )
-        return prirority
+        return priority
+
+    def save_state(self):
+        """Override base save_state to avoid warnings"""
+        pass  # override to avoid warnings
+
+    def resync_metagraph(self):
+        """Resyncs the metagraph and updates the hotkeys and moving averages based on the new metagraph."""
+        # Sync the metagraph.
+        self.metagraph.sync(subtensor=self.subtensor)
 
 
 # This is the main function, which runs the miner.

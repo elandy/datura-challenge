@@ -21,10 +21,10 @@ import torch
 import unittest
 import bittensor as bt
 
-from neurons.validator import Neuron as Validator
-from neurons.miner import Neuron as Miner
+from neurons.validator import Validator
+from neurons.miner import Miner
 
-from template.protocol import Dummy
+from neurons.protocol import WebServerLogLine
 from template.validator.forward import forward
 from template.utils.uids import get_random_uids
 from template.validator.reward import get_rewards
@@ -40,11 +40,11 @@ class TemplateValidatorNeuronTestCase(unittest.TestCase):
     """
 
     def setUp(self):
-        sys.argv = sys.argv[0] + ["--config", "tests/configs/validator.json"]
+        # sys.argv = sys.argv[0] + ["--config", "tests/configs/validator.json"]
 
         config = BaseValidatorNeuron.config()
         config.wallet._mock = True
-        config.metagraph._mock = True
+        # config.metagraph._mock = True
         config.subtensor._mock = True
         self.neuron = Validator(config)
         self.miner_uids = get_random_uids(self, k=10)
@@ -70,7 +70,7 @@ class TemplateValidatorNeuronTestCase(unittest.TestCase):
                 self.neuron.metagraph.axons[uid] for uid in self.miner_uids
             ],
             # Construct a dummy query.
-            synapse=Dummy(dummy_input=self.neuron.step),
+            synapse=WebServerLogLine(logline_input=self.neuron.step),
             # All responses have the deserialize function called on them before returning.
             deserialize=True,
         )
@@ -84,7 +84,7 @@ class TemplateValidatorNeuronTestCase(unittest.TestCase):
             # Send the query to miners in the network.
             axons=[self.metagraph.axons[uid] for uid in self.miner_uids],
             # Construct a dummy query.
-            synapse=Dummy(dummy_input=self.neuron.step),
+            synapse=WebServerLogLine(logline_input=self.neuron.step),
             # All responses have the deserialize function called on them before returning.
             deserialize=True,
         )
@@ -100,7 +100,7 @@ class TemplateValidatorNeuronTestCase(unittest.TestCase):
             # Send the query to miners in the network.
             axons=[self.metagraph.axons[uid] for uid in self.miner_uids],
             # Construct a dummy query.
-            synapse=Dummy(dummy_input=self.neuron.step),
+            synapse=WebServerLogLine(logline_input=self.neuron.step),
             # All responses have the deserialize function called on them before returning.
             deserialize=True,
         )
