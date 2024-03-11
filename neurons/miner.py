@@ -1,7 +1,6 @@
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
-# TODO(developer): Set your name
-# Copyright © 2023 <your name>
+# Copyright © 2024 Andres Politi
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
@@ -38,8 +37,6 @@ class Miner(BaseMinerNeuron):
 
     def __init__(self, config=None):
         super(Miner, self).__init__(config=config)
-
-        # TODO(developer): Anything specific to your use case you can do here
 
     async def forward(
         self, synapse: protocol.WebServerLogLine
@@ -89,7 +86,6 @@ class Miner(BaseMinerNeuron):
 
         Otherwise, allow the request to be processed further.
         """
-        # TODO(developer): Define how miners should blacklist requests.
         uid = self.metagraph.hotkeys.index(synapse.dendrite.hotkey)
         if (
             not self.config.blacklist.allow_non_registered

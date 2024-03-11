@@ -1,7 +1,6 @@
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
-# TODO(developer): Set your name
-# Copyright © 2023 <your name>
+# Copyright © 2024 Andres Politi
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
@@ -58,8 +57,6 @@ class Validator(BaseValidatorNeuron):
         bt.logging.info("load_state()")
         self.load_state()
 
-        # TODO(developer): Anything specific to your use case you can do here
-
     async def forward(self):
         """
         Validator forward pass. Consists of:
@@ -73,7 +70,6 @@ class Validator(BaseValidatorNeuron):
         The reward is based on the amount of keys of the ParsedWebserverLogLine that the miner was able to fill
         This rewards miners with better parsing mechanisms that capture as much data from the logline as possible
         """
-        # TODO(developer): Rewrite this function based on your protocol definition.
         miner_uids = get_random_uids(self, k=self.config.neuron.sample_size)
 
         logline_input = example_loglines[self.step % len(example_loglines)]
