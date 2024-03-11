@@ -25,7 +25,7 @@ from typing import List
 import bittensor as bt
 import torch
 
-from neurons.parsing import ParsedWebserverLogLine
+from neurons.parsing import ParsedWebserverLogLine, INVALID
 from neurons.protocol import WebServerLogLine
 
 # import base validator class which takes care of most of the boilerplate
@@ -135,7 +135,7 @@ class Validator(BaseValidatorNeuron):
         for valid_key in total_valid_keys:
             # count the amount of keys in the dictionary that the parsing mechanism was able to fill
             if response.get(valid_key):
-                valid_keys += 1
+                valid_keys += 1 if response[valid_key] not in [INVALID, ''] else 0
 
         # return 1.0 if all keys filled, else the percentage of filled keys
         return valid_keys / len(total_valid_keys)
